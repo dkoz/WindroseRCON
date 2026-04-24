@@ -1,6 +1,6 @@
 # Windrose RCON
 
-Standalone RCON server for Windrose game servers using source rcon protocol. Injects via `version.dll` proxy and provides server and player information.
+Standalone RCON server for Windrose game servers using source rcon protocol. Injects via `version.dll` proxy and provides server information, query and player management.
 
 ## Features
 
