@@ -135,8 +135,8 @@ namespace UnrealEngine {
         std::vector<PlayerInfo> players;
         
         // Get UWorld from GWorld offset
-        // Reference: SDK/Basic.hpp - Offsets::GWorld = 0x0F62B460
-        uintptr_t gWorldAddr = moduleBase + 0x0F62B460;
+        // Reference: SDK/Basic.hpp - Offsets::GWorld = 0x0F62F460
+        uintptr_t gWorldAddr = moduleBase + 0x0F62F460;
         UObject** gWorldPtr = (UObject**)gWorldAddr;
         
         if (!gWorldPtr || IsBadReadPtr(gWorldPtr, 8) || !*gWorldPtr) {
@@ -301,9 +301,9 @@ namespace UnrealEngine {
                     int32_t Max;
                 };
                 
-                // Reference: SDK/Basic.hpp - Offsets::AppendString = 0x014551C0
+                // Reference: SDK/Basic.hpp - Offsets::AppendString = 0x014551E0
                 typedef void(*AppendStringFn)(void*, FString*);
-                AppendStringFn AppendString = (AppendStringFn)(moduleBase + 0x014551C0);
+                AppendStringFn AppendString = (AppendStringFn)(moduleBase + 0x014551E0);
                 
                 UObject* clientTravelFunc = nullptr;
                 
@@ -345,9 +345,9 @@ namespace UnrealEngine {
                     return false;
                 }
                 
-                // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x016929E0
+                // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x01692A00
                 typedef void(*ProcessEventFn)(UObject*, UObject*, void*);
-                ProcessEventFn ProcessEvent = (ProcessEventFn)(moduleBase + 0x016929E0);
+                ProcessEventFn ProcessEvent = (ProcessEventFn)(moduleBase + 0x01692A00);
                 
                 struct {
                     FString URL;

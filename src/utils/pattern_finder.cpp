@@ -70,8 +70,8 @@ uintptr_t PatternScanner::FindPattern(uintptr_t start, size_t size, const char* 
 uintptr_t PatternScanner::ScanForGObjects(uintptr_t moduleBase, size_t moduleSize) {
     LogMessage("Using Dumper7 GObjects offset...");
     
-    // Reference: SDK/Basic.hpp - Offsets::GObjects = 0x0FB1B050
-    constexpr int32_t GObjectsOffset = 0x0FB1B050;
+    // Reference: SDK/Basic.hpp - Offsets::GObjects = 0x0FB1F050
+    constexpr int32_t GObjectsOffset = 0x0FB1F050;
     uintptr_t gobjectsAddr = moduleBase + GObjectsOffset;
     
     char msg[128];

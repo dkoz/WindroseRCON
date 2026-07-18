@@ -53,13 +53,13 @@ struct UObject {
     typedef void(__fastcall* ProcessEventFn)(UObject*, void*, void*);
     
     // ProcessEvent function
-    // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x016929E0
+    // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x01692A00
     void ProcessEvent(void* function, void* params) {
         static uintptr_t moduleBase = 0;
         if (!moduleBase) {
             moduleBase = (uintptr_t)GetModuleHandleA(NULL);
         }
-        ProcessEventFn fn = (ProcessEventFn)(moduleBase + 0x016929E0);
+        ProcessEventFn fn = (ProcessEventFn)(moduleBase + 0x01692A00);
         fn(this, function, params);
     }
 };
