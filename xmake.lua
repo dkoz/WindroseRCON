@@ -1,5 +1,5 @@
 set_project("windrose-rcon")
-set_version("1.1.3")
+set_version("1.1.4")
 
 add_rules("mode.release")
 
@@ -22,7 +22,8 @@ target("version")
               "src/commands/shutdown.cpp",
               "src/commands/uptime.cpp",
               "src/commands/playerinfo.cpp")
-    add_headerfiles("src/windrose_engine.h",
+    add_headerfiles("src/offsets.h",
+                    "src/windrose_engine.h",
                     "src/config/config.h",
                     "src/rcon/rcon_server.h",
                     "src/crypto/aes_crypto.h",

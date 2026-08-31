@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include "offsets.h"
+
 // FString with Small String Optimization (SSO)
 // Reference: SDK/UnrealContainers.hpp
 struct FString {
@@ -41,7 +43,6 @@ struct FString {
 };
 
 // UObject structure
-// Reference: SDK/CoreUObject_classes.hpp - Class CoreUObject.Object (0x0028 size)
 struct UObject {
     void** VTable;                  // 0x0000
     int32_t ObjectFlags;            // 0x0008 (EObjectFlags)
@@ -52,14 +53,12 @@ struct UObject {
     
     typedef void(__fastcall* ProcessEventFn)(UObject*, void*, void*);
     
-    // ProcessEvent function
-    // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x01692A00
     void ProcessEvent(void* function, void* params) {
         static uintptr_t moduleBase = 0;
         if (!moduleBase) {
             moduleBase = (uintptr_t)GetModuleHandleA(NULL);
         }
-        ProcessEventFn fn = (ProcessEventFn)(moduleBase + 0x01692A00);
+        ProcessEventFn fn = (ProcessEventFn)(moduleBase + Offsets::Global::ProcessEvent);
         fn(this, function, params);
     }
 };

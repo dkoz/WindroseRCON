@@ -1,4 +1,5 @@
 #include "pattern_finder.h"
+#include "offsets.h"
 #include <string>
 
 extern void LogMessage(const std::string& message);
@@ -70,9 +71,7 @@ uintptr_t PatternScanner::FindPattern(uintptr_t start, size_t size, const char* 
 uintptr_t PatternScanner::ScanForGObjects(uintptr_t moduleBase, size_t moduleSize) {
     LogMessage("Using Dumper7 GObjects offset...");
     
-    // Reference: SDK/Basic.hpp - Offsets::GObjects = 0x0FB1F050
-    constexpr int32_t GObjectsOffset = 0x0FB1F050;
-    uintptr_t gobjectsAddr = moduleBase + GObjectsOffset;
+    uintptr_t gobjectsAddr = moduleBase + Offsets::Global::GObjects;
     
     char msg[128];
     sprintf_s(msg, "GObjects address: 0x%llX", gobjectsAddr);
@@ -124,12 +123,8 @@ std::vector<uintptr_t> PatternScanner::FindAllPlayerStates(uintptr_t gobjectsAdd
         
         
         // Player validation offsets from SDK
-        // Reference: SDK/Engine_classes.hpp - APlayerState::PlayerNamePrivate at 0x0340
-        FString* playerName = (FString*)(obj + 0x0340);
-        
-        // Reference: SDK/R5DataKeepers_classes.hpp + R5DataKeepers_structs.hpp
-        // AccountData at 0x0378, AccountId at +0x0010 = 0x0388
-        FString* accountId = (FString*)(obj + 0x0388);
+        FString* playerName = (FString*)(obj + Offsets::APlayerState::PlayerNamePrivate);
+        FString* accountId = (FString*)(obj + Offsets::AR5DataKeeper_PlayerState::AccountId);
         
         if (IsBadReadPtr(playerName, sizeof(FString))) continue;
         if (playerName->Length < 2 || playerName->Length > 50) continue;
@@ -175,14 +170,13 @@ std::vector<uintptr_t> PatternScanner::FindAllPlayerStates(uintptr_t gobjectsAdd
         
         if (!hasValidChars) continue;
         
-        // Reference: SDK/Engine_classes.hpp - APlayerState flags at 0x02B2
         // Used to filter inactive/spectator players
-        uint8_t* playerFlagsPtr = (uint8_t*)(obj + 0x02B2);
+        uint8_t* playerFlagsPtr = (uint8_t*)(obj + Offsets::APlayerState::Flags);
         if (IsBadReadPtr(playerFlagsPtr, 1)) continue;
         
         uint8_t playerFlags = *playerFlagsPtr;
-        bool bIsInactive = (playerFlags & (1 << 5)) != 0;
-        bool bOnlySpectator = (playerFlags & (1 << 2)) != 0;
+        bool bIsInactive = (playerFlags & Offsets::APlayerState::Bit_bIsInactive) != 0;
+        bool bOnlySpectator = (playerFlags & Offsets::APlayerState::Bit_bOnlySpectator) != 0;
         
         if (bIsInactive || bOnlySpectator) continue;
         

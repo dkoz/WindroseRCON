@@ -134,9 +134,7 @@ namespace UnrealEngine {
     std::vector<PlayerInfo> StandaloneIntegration::GetAllPlayers() {
         std::vector<PlayerInfo> players;
         
-        // Get UWorld from GWorld offset
-        // Reference: SDK/Basic.hpp - Offsets::GWorld = 0x0F62F460
-        uintptr_t gWorldAddr = moduleBase + 0x0F62F460;
+        uintptr_t gWorldAddr = moduleBase + Offsets::Global::GWorld;
         UObject** gWorldPtr = (UObject**)gWorldAddr;
         
         if (!gWorldPtr || IsBadReadPtr(gWorldPtr, 8) || !*gWorldPtr) {
@@ -146,9 +144,7 @@ namespace UnrealEngine {
         
         UObject* world = *gWorldPtr;
         
-        // UWorld->GameState is at offset 0x01B0 (for dedicated servers)
-        // Reference: SDK/Engine_classes.hpp - UWorld::GameState
-        UObject** gameStatePtr = (UObject**)((uintptr_t)world + 0x01B0);
+        UObject** gameStatePtr = (UObject**)((uintptr_t)world + Offsets::UWorld::GameState);
         if (!gameStatePtr || IsBadReadPtr(gameStatePtr, 8) || !*gameStatePtr) {
             LogMessage("GameState not available");
             return players;
@@ -156,15 +152,13 @@ namespace UnrealEngine {
         
         UObject* gameState = *gameStatePtr;
         
-        // GameState->PlayerArray is a TArray at offset 0x02C0
-        // Reference: SDK/Engine_classes.hpp - AGameStateBase::PlayerArray
         struct TArray {
             void** Data;
             int32_t Count;
             int32_t Max;
         };
         
-        TArray* playerArray = (TArray*)((uintptr_t)gameState + 0x02C0);
+        TArray* playerArray = (TArray*)((uintptr_t)gameState + Offsets::AGameStateBase::PlayerArray);
         if (!playerArray || IsBadReadPtr(playerArray, sizeof(TArray))) {
             LogMessage("PlayerArray not available");
             return players;
@@ -183,15 +177,11 @@ namespace UnrealEngine {
             // Simple approach: Get from PlayerState->PawnPrivate->Controller
             UObject* playerController = nullptr;
             
-            // PlayerState->PawnPrivate is at offset 0x0320
-            // Reference: SDK/Engine_classes.hpp - APlayerState::PawnPrivate
-            UObject** pawnPtr = (UObject**)((uintptr_t)playerState + 0x0320);
+            UObject** pawnPtr = (UObject**)((uintptr_t)playerState + Offsets::APlayerState::PawnPrivate);
             if (pawnPtr && !IsBadReadPtr(pawnPtr, 8) && *pawnPtr) {
                 UObject* pawn = *pawnPtr;
                 
-                // APawn->Controller is at offset 0x02D8
-                // Reference: SDK/Engine_classes.hpp - APawn::Controller at 0x02D8
-                UObject** controllerPtr = (UObject**)((uintptr_t)pawn + 0x02D8);
+                UObject** controllerPtr = (UObject**)((uintptr_t)pawn + Offsets::APawn::Controller);
                 if (controllerPtr && !IsBadReadPtr(controllerPtr, 8) && *controllerPtr) {
                     playerController = *controllerPtr;
                 }
@@ -204,16 +194,15 @@ namespace UnrealEngine {
             info.playerStatePtr = (uintptr_t)playerState;
             info.playerControllerPtr = (uintptr_t)playerController;
 
-            // Read pawn location via RootComponent
-            // AActor::RootComponent at 0x01B8, USceneComponent::RelativeLocation at 0x0140 (FVector double[3])
+            // Read pawn location via RootComponent (FVector/FRotator are double[3])
             if (pawnPtr && !IsBadReadPtr(pawnPtr, 8) && *pawnPtr) {
                 UObject* pawn = *pawnPtr;
                 info.pawnPtr = (uintptr_t)pawn;
-                UObject** rootCompPtr = (UObject**)((uintptr_t)pawn + 0x01B8);
+                UObject** rootCompPtr = (UObject**)((uintptr_t)pawn + Offsets::AActor::RootComponent);
                 if (!IsBadReadPtr(rootCompPtr, 8) && *rootCompPtr) {
                     uintptr_t rootComp = (uintptr_t)*rootCompPtr;
-                    double* loc = (double*)(rootComp + 0x0140);
-                    double* rot = (double*)(rootComp + 0x0158);
+                    double* loc = (double*)(rootComp + Offsets::USceneComponent::RelativeLocation);
+                    double* rot = (double*)(rootComp + Offsets::USceneComponent::RelativeRotation);
                     if (!IsBadReadPtr(loc, sizeof(double) * 3) && !IsBadReadPtr(rot, sizeof(double) * 3)) {
                         info.x = loc[0]; info.y = loc[1]; info.z = loc[2];
                         info.pitch = rot[0]; info.yaw = rot[1]; info.roll = rot[2];
@@ -222,18 +211,12 @@ namespace UnrealEngine {
                 }
             }
             
-            // PlayerNamePrivate offset in APlayerState
-            // Reference: SDK/Engine_classes.hpp - APlayerState::PlayerNamePrivate at 0x0340
-            FString* namePtr = (FString*)((uintptr_t)playerState + 0x0340);
+            FString* namePtr = (FString*)((uintptr_t)playerState + Offsets::APlayerState::PlayerNamePrivate);
             if (namePtr && !IsBadReadPtr(namePtr, sizeof(FString)) && namePtr->Length > 0) {
                 info.playerName = namePtr->ToString();
             }
             
-            // AccountId offset in AR5DataKeeper_PlayerState
-            // Reference: SDK/R5DataKeepers_classes.hpp - AR5DataKeeper_PlayerState::AccountData at 0x0378
-            // Reference: SDK/R5DataKeepers_structs.hpp - FR5DataKeeper_AccountData::AccountId at +0x0010
-            // Total offset: 0x0378 + 0x0010 = 0x0388
-            FString* idPtr = (FString*)((uintptr_t)playerState + 0x0388);
+            FString* idPtr = (FString*)((uintptr_t)playerState + Offsets::AR5DataKeeper_PlayerState::AccountId);
             if (idPtr && !IsBadReadPtr(idPtr, sizeof(FString)) && idPtr->Length > 0) {
                 std::wstring idW = idPtr->ToString();
                 info.accountId = std::string(idW.begin(), idW.end());
@@ -301,21 +284,18 @@ namespace UnrealEngine {
                     int32_t Max;
                 };
                 
-                // Reference: SDK/Basic.hpp - Offsets::AppendString = 0x014551E0
                 typedef void(*AppendStringFn)(void*, FString*);
-                AppendStringFn AppendString = (AppendStringFn)(moduleBase + 0x014551E0);
+                AppendStringFn AppendString = (AppendStringFn)(moduleBase + Offsets::Global::AppendString);
                 
                 UObject* clientTravelFunc = nullptr;
                 
                 for (UObject* clss = pcClass; clss && !IsBadReadPtr(clss, 0x100); ) {
-                    // Reference: SDK/CoreUObject_classes.hpp - UStruct::Children = 0x0048
-                    UObject** childrenPtr = (UObject**)((uintptr_t)clss + 0x0048);
+                    UObject** childrenPtr = (UObject**)((uintptr_t)clss + Offsets::UStruct::Children);
                     if (childrenPtr && !IsBadReadPtr(childrenPtr, 8)) {
                         for (UObject* field = *childrenPtr; field && !IsBadReadPtr(field, 0x50); ) {
                             wchar_t nameBuf[256] = {0};
                             FString nameStr = {nameBuf, 0, 256};
-                            // Reference: SDK/CoreUObject_classes.hpp - UField::NamePrivate = 0x0018
-                            void* fnamePtr = (void*)((uintptr_t)field + 0x0018);
+                            void* fnamePtr = (void*)((uintptr_t)field + Offsets::UObject::Name);
                             
                             try {
                                 AppendString(fnamePtr, &nameStr);
@@ -326,16 +306,14 @@ namespace UnrealEngine {
                                 }
                             } catch (...) {}
                             
-                            // Reference: SDK/CoreUObject_classes.hpp - UField::Next = 0x0028
-                            UObject** nextPtr = (UObject**)((uintptr_t)field + 0x0028);
+                            UObject** nextPtr = (UObject**)((uintptr_t)field + Offsets::UField::Next);
                             if (!nextPtr || IsBadReadPtr(nextPtr, 8)) break;
                             field = *nextPtr;
                         }
                     }
                     if (clientTravelFunc) break;
                     
-                    // Reference: SDK/CoreUObject_classes.hpp - UStruct::SuperStruct = 0x0040
-                    UObject** superPtr = (UObject**)((uintptr_t)clss + 0x0040);
+                    UObject** superPtr = (UObject**)((uintptr_t)clss + Offsets::UStruct::SuperStruct);
                     if (!superPtr || IsBadReadPtr(superPtr, 8)) break;
                     clss = *superPtr;
                 }
@@ -345,9 +323,8 @@ namespace UnrealEngine {
                     return false;
                 }
                 
-                // Reference: SDK/Basic.hpp - Offsets::ProcessEvent = 0x01692A00
                 typedef void(*ProcessEventFn)(UObject*, UObject*, void*);
-                ProcessEventFn ProcessEvent = (ProcessEventFn)(moduleBase + 0x01692A00);
+                ProcessEventFn ProcessEvent = (ProcessEventFn)(moduleBase + Offsets::Global::ProcessEvent);
                 
                 struct {
                     FString URL;
